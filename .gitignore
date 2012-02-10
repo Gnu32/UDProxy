@@ -1,0 +1,6 @@
+
+bin/
+Distribution/UDProxy.exe
+obj/
+*.pdb
+*.suo
