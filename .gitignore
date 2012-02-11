@@ -4,3 +4,4 @@ Distribution/UDProxy.exe
 obj/
 *.pdb
 *.suo
+CSharpTest/

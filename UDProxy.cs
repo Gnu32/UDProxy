@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace SimPlaza.UDProxy
 {
     class UDProxy
     {
         public static Connection gConnection;
-        public struct gConfiguration {
-            public static IPAddress ListenIP = IPAddress.Any;
-            public static ushort ListenPort = 1080;
-
-            public static IPAddress MyExternalIP = IPAddress.Parse("90.206.69.103");
-            public static IPAddress TargetIP = IPAddress.Parse("192.168.0.32");
-            public static int TargetPort = 9000;
-
-        };
+        public static Configuration gConfiguration;
+        //public static NotifyIcon gTrayIcon;
+        public static bool lol;
+        private static TcpListener gTCP;
+        private static Array fCols;
+        private static Random fRand;
 
         public enum DebugLevels
         {
@@ -24,21 +23,30 @@ namespace SimPlaza.UDProxy
             Info = ConsoleColor.Gray
         }
 
-        private static TcpListener gTCP;
-
         static void Main(string[] args)
         {
+            // Set up console
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.DarkRed;
             Console.Clear();
-            Console.WriteLine("************************");
-            Console.WriteLine("|   SPRD - UDP Proxy   |");
-            Console.WriteLine("************************");
+            Console.WriteLine(@"
+`..     `..`.....    `.......                                     
+`..     `..`..   `.. `..    `..                                   
+`..     `..`..    `..`..    `..`. `...   `..    `..   `..`..   `..
+`..     `..`..    `..`.......   `..    `..  `..   `. `..  `.. `.. 
+`..     `..`..    `..`..        `..   `..    `..   `.       `...  
+`..     `..`..   `.. `..        `..    `..  `..  `.  `..     `..  
+  `.....   `.....    `..       `...      `..    `..   `..   `..   
+                             SIMPL -  Major Rasputin 2012  `..    
+__________________________________________________________________");
+
+            // Load configuration
+            gConfiguration = new Configuration(args);
 
             // Begin listening for connection requests
             gTCP = new TcpListener(
-                gConfiguration.ListenIP,
-                gConfiguration.ListenPort
+                (IPAddress)gConfiguration.Config["ListenIP"],
+                (ushort)gConfiguration.Config["ListenPort"]
             );
             gTCP.Start();
             DebugInfo("UDProxy", "Waiting for SOCKS connections on " + gTCP.LocalEndpoint.ToString());
@@ -54,10 +62,27 @@ namespace SimPlaza.UDProxy
 
         public static void Debug(string cls, string msg, DebugLevels level)
         {
-            Console.ForegroundColor = (ConsoleColor)level;
-            Console.Write(cls);
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" | " + msg);
+            if ( UDProxy.lol )
+            {
+                if (fRand == null) fRand = new Random(69);
+                if (fCols == null) fCols = Enum.GetValues(typeof(ConsoleColor));
+                ConsoleColor color;
+
+                do
+                {
+                    color = (ConsoleColor)fCols.GetValue(fRand.Next(fCols.Length));
+                } while (color == ConsoleColor.DarkRed);
+
+                Console.ForegroundColor = color;
+                Console.WriteLine(cls + " | " + msg);
+            }
+            else
+            {
+                Console.ForegroundColor = (ConsoleColor)level;
+                Console.Write(cls);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(" | " + msg);
+            }
         }
 
             public static void DebugInfo(string cls, string msg)

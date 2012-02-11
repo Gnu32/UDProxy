@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Collections.Generic;
 using SimPlaza.UDProxy.SOCKS5;
 
 namespace SimPlaza.UDProxy.UDP
@@ -12,6 +13,9 @@ namespace SimPlaza.UDProxy.UDP
         public static Thread MyThread;
         public static UdpClient MyUDP;
         public static IPEndPoint MyClient;
+
+        public static int TotalUp;
+        public static int TotalDown;
 
         private static IPEndPoint sender;
         private static byte[] data;
@@ -25,15 +29,18 @@ namespace SimPlaza.UDProxy.UDP
             if (MyUDP != null)
                 MyUDP.Close();
 
+            TotalUp = 0;
+            TotalDown = 0;
+
             try
             {
                 // Set the client's UDP destination port to ours
-                reply.PORT = UDProxy.gConfiguration.ListenPort;
+                reply.PORT = (ushort)UDProxy.gConfiguration.Config["ListenPort"];
 
                 // Set our client's expected IP and Port from SOCKS5
                 MyClient = client;
 
-                MyUDP = new UdpClient( UDProxy.gConfiguration.ListenPort );
+                MyUDP = new UdpClient( (ushort)UDProxy.gConfiguration.Config["ListenPort"] );
 
                 MyUDP.AllowNatTraversal(false);
                 MyUDP.DontFragment = true;
@@ -82,12 +89,11 @@ namespace SimPlaza.UDProxy.UDP
 
             // THIS IS WHERE ALL THE MAGIC HAPPENS, BABY
             // Loopback detection: If we're making a request to our external IP, route it!
-            if (ip.Equals(UDProxy.gConfiguration.MyExternalIP))
-                ip = UDProxy.gConfiguration.TargetIP;
+            if (ip.Equals( (IPAddress)UDProxy.gConfiguration.Config["MyExternalIP"]) )
+                ip = (IPAddress)UDProxy.gConfiguration.Config["TargetIP"];
 
             IPEndPoint destination = new IPEndPoint(ip, port);
-            MyUDP.Send(packet.DATA, packet.DATA.Length, destination);
-            //DebugInfo(String.Format("Transmitting packet: {0} bytes, raw data {1} bytes", data.Length, packet.DATA.Length));
+            TotalUp += MyUDP.Send(packet.DATA, packet.DATA.Length, destination);
         }
 
         public static void HandleIncoming(byte[] data, IPEndPoint sender)
@@ -95,8 +101,9 @@ namespace SimPlaza.UDProxy.UDP
             // THIS IS WHERE ALL THE MAGIC UNHAPPENS, BABY
             // Loopback detection: If we're receiving from a server we're routing to,
             // make it look like it's coming from our external IP.
-            if (sender.Address.Equals(UDProxy.gConfiguration.TargetIP) && sender.Port == UDProxy.gConfiguration.TargetPort)
-                sender.Address = UDProxy.gConfiguration.MyExternalIP;
+            if (sender.Address.Equals((IPAddress)UDProxy.gConfiguration.Config["TargetIP"])
+                && ( (List<ushort>)UDProxy.gConfiguration.Config["TargetPorts"] ).Contains((ushort)sender.Port)  )
+                sender.Address = (IPAddress)UDProxy.gConfiguration.Config["MyExternalIP"];
 
             var packet = new PacketUDP(
                 SOCKS5Protocol.ATYP.IPV4,
@@ -106,7 +113,7 @@ namespace SimPlaza.UDProxy.UDP
             );
 
             var packetBytes = packet.GetBytes();
-            MyUDP.Send(packetBytes, packetBytes.Length, MyClient);
+            TotalDown += MyUDP.Send(packetBytes, packetBytes.Length, MyClient);
         }
 
         #region Debugs
