@@ -31,6 +31,7 @@ namespace SimPlaza.UDProxy
                 (IPEndPoint) MyConnection.Client.RemoteEndPoint
             );
 
+            Console.WriteLine("\n___ CONNECTION BEGIN ________________________________");
             DebugInfo("Accepted connection with " + MyConnection.Client.RemoteEndPoint.ToString());
 
             MyThread.Start();
@@ -68,7 +69,10 @@ namespace SimPlaza.UDProxy
             }
 
             DebugInfo("No more data left, closing stream and ending thread.");
-            DebugInfo("*** CONNECTION END ********************************");
+            Console.WriteLine("___ CONNECTION END __________________________________");
+            Console.WriteLine(
+                String.Format(" {0} bytes sent, {1} bytes received", UDPConnection.TotalUp, UDPConnection.TotalDown)
+            );
 
             if (UDPConnection.MyThread != null)
                 UDPConnection.MyThread.Abort();
@@ -119,7 +123,7 @@ namespace SimPlaza.UDProxy
 
             } while (MyStream.DataAvailable);
 
-            DebugInfo(String.Format("Received full stream of {0} bytes.", totalBytes));
+            //DebugInfo(String.Format("Received full stream of {0} bytes.", totalBytes));
 
             // Trim the buffer and return
             finalBuffer = new byte[totalBytes];

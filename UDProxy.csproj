@@ -49,6 +49,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -56,16 +58,35 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration.cs" />
     <Compile Include="Connection.cs" />
-    <Compile Include="SOCKS5.cs" />
-    <Compile Include="UDPServer.cs" />
+    <Compile Include="Netcode\SOCKS5.cs" />
+    <Compile Include="Netcode\UDPServer.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="UDProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SOCKS5Packets.cs" />
+    <Compile Include="Netcode\SOCKS5Packets.cs" />
+    <Compile Include="Util\NetUtilities.cs" />
     <Compile Include="Util\UDProxyException.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\IconApp.ico" />
+    <None Include="app.config" />
+    <None Include="Resources\IconTray.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="GUI\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
