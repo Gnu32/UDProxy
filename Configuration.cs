@@ -9,8 +9,8 @@ namespace SimPlaza.UDProxy
     class Configuration
     {
         public Dictionary<string, object> Config = new Dictionary<string, object>{
-            {"ListenIP", null},
-            {"ListenPort", null},
+            {"ListenIP", IPAddress.Any},
+            {"ListenPort", (ushort)1080},
             {"MyExternalIP", null},
             {"TargetIP", null},
             {"TargetPorts", null},
@@ -48,11 +48,11 @@ namespace SimPlaza.UDProxy
             if (Config["TargetPorts"] == null)
                 Config["TargetPorts"] = Ask<List<ushort>>("What are the ports of the regions of your server? (Seperate by comma)", "9000") as List<ushort>;
 
-            if (Config["ListenIP"] == null)
-                Config["ListenIP"] = Ask<IPAddress>("What system IP do you want the SOCKS5 server to listen on?", "0.0.0.0") as IPAddress;
+            //if (Config["ListenIP"] == null)
+            //    Config["ListenIP"] = Ask<IPAddress>("What system IP do you want the SOCKS5 server to listen on?", "0.0.0.0") as IPAddress;
 
-            if (Config["ListenPort"] == null)
-                Config["ListenPort"] = Ask<ushort>("What system port do you want the SOCKS5 server to listen on?", "1080");
+            //if (Config["ListenPort"] == null)
+            //    Config["ListenPort"] = Ask<ushort>("What system port do you want the SOCKS5 server to listen on?", "1080");
 
             complete = true;
             Console.WriteLine();

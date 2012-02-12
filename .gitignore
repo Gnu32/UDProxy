@@ -5,3 +5,5 @@ obj/
 *.pdb
 *.suo
 CSharpTest/
+*.csproj.user
+*.db

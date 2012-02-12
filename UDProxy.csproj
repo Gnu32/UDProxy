@@ -67,7 +67,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Settings.cs" />
     <Compile Include="UDProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Netcode\SOCKS5Packets.cs" />
@@ -76,7 +75,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\IconApp.ico" />
-    <None Include="app.config" />
     <None Include="Resources\IconTray.ico" />
   </ItemGroup>
   <ItemGroup>

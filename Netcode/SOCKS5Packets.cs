@@ -169,7 +169,9 @@ namespace SimPlaza.UDProxy.SOCKS5
 
             ATYP = packet.ATYP;
             ADDR = packet.ADDR;
-            PORT = BitConverter.ToUInt16(packet.PORT, 0);
+
+            // Our listening port for UDP, so the client knows where to transmit to
+            PORT = (ushort)UDProxy.gConfiguration.Config["ListenPort"];
         }
 
         public byte[] GetBytes()

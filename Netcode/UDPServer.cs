@@ -14,9 +14,14 @@ namespace SimPlaza.UDProxy.UDP
         public static UdpClient MyUDP;
         public static IPEndPoint MyClient;
 
+        public static IPAddress ExternalIP;
+        public static IPAddress TargetIP;
+        public static List<ushort> TargetPorts;
+
         public static int TotalUp;
         public static int TotalDown;
 
+        private static bool hasClientPort = true;
         private static IPEndPoint sender;
         private static byte[] data;
 
@@ -34,11 +39,19 @@ namespace SimPlaza.UDProxy.UDP
 
             try
             {
-                // Set the client's UDP destination port to ours
-                reply.PORT = (ushort)UDProxy.gConfiguration.Config["ListenPort"];
-
                 // Set our client's expected IP and Port from SOCKS5
                 MyClient = client;
+
+                if (MyClient.Port == 0)
+                {
+                    DebugWarn("Client's port is 0, going to have to guess source port (normal with V2/V3 viewers).");
+                    hasClientPort = false;
+                }
+
+                // Get target's IP and ports from config (less lag)
+                ExternalIP = (IPAddress)UDProxy.gConfiguration.Config["MyExternalIP"];
+                TargetIP = (IPAddress)UDProxy.gConfiguration.Config["TargetIP"];
+                TargetPorts = (List<ushort>)UDProxy.gConfiguration.Config["TargetPorts"];
 
                 MyUDP = new UdpClient( (ushort)UDProxy.gConfiguration.Config["ListenPort"] );
 
@@ -72,6 +85,19 @@ namespace SimPlaza.UDProxy.UDP
                     break;
                 }
 
+                // V2 and V3 viewers don't give the SOCKS5 server their expected port
+                // So we need to guess it from the first packet. :(
+                // TODO: Make this safer by checking if packet is indeed a valid UDP assoc packet
+                if (!hasClientPort)
+                {
+                    if (sender.Address.Equals(MyClient.Address))
+                    {
+                        hasClientPort = true;
+                        MyClient.Port = sender.Port;
+                        DebugWarn("Guessed client's unknown port as " + MyClient.Port);
+                    }
+                }
+
                 // If the packet came from the client, it's a UDP assoc packet.
                 if (sender.Equals(MyClient))
                     HandleOutgoing(data);
@@ -89,7 +115,8 @@ namespace SimPlaza.UDProxy.UDP
 
             // THIS IS WHERE ALL THE MAGIC HAPPENS, BABY
             // Loopback detection: If we're making a request to our external IP, route it!
-            if (ip.Equals( (IPAddress)UDProxy.gConfiguration.Config["MyExternalIP"]) )
+            // Note that we're rerouting regardless
+            if (ip.Equals(ExternalIP) && TargetPorts.Contains(port))
                 ip = (IPAddress)UDProxy.gConfiguration.Config["TargetIP"];
 
             IPEndPoint destination = new IPEndPoint(ip, port);
@@ -101,9 +128,8 @@ namespace SimPlaza.UDProxy.UDP
             // THIS IS WHERE ALL THE MAGIC UNHAPPENS, BABY
             // Loopback detection: If we're receiving from a server we're routing to,
             // make it look like it's coming from our external IP.
-            if (sender.Address.Equals((IPAddress)UDProxy.gConfiguration.Config["TargetIP"])
-                && ( (List<ushort>)UDProxy.gConfiguration.Config["TargetPorts"] ).Contains((ushort)sender.Port)  )
-                sender.Address = (IPAddress)UDProxy.gConfiguration.Config["MyExternalIP"];
+            if (sender.Address.Equals(TargetIP) && TargetPorts.Contains((ushort)sender.Port))
+                sender.Address = ExternalIP;
 
             var packet = new PacketUDP(
                 SOCKS5Protocol.ATYP.IPV4,
