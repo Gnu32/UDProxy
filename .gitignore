@@ -7,3 +7,5 @@ obj/
 CSharpTest/
 *.csproj.user
 *.db
+*.zip
+*.bat

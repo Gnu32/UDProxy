@@ -3,6 +3,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace SimPlaza.UDProxy
 {
@@ -18,18 +19,23 @@ namespace SimPlaza.UDProxy
         };
 
         private bool complete = false;
+        private string[] Args;
 
         public Configuration(string[] args)
         {
+            Args = args;
+
             if (Array.IndexOf(args, "--fab") > -1)
                 UDProxy.lol = true;
 
             if (Config["MyExternalIP"] == null)
                 Config["MyExternalIP"] = NetUtilities.GetExternalIP();
 
-            Console.WriteLine("# I'm now going to ask you a few configuration questions.");
-            //Console.WriteLine("# This will generate a batch file that executes UDProxy with these settings.");
-            Console.WriteLine("# Each question has a default or example answer in [Brackets]. Simply press [ENTER] to use it.");
+            if (Array.IndexOf(args, "--nobatch") == -1)
+            {
+                Console.WriteLine("# I'm now going to ask you a few configuration questions.");
+                Console.WriteLine("# Each question has a default or example answer in [Brackets]. Simply press [ENTER] to use it.");
+            }
 
             if (Config["MyExternalIP"] == null)
             {
@@ -43,10 +49,38 @@ namespace SimPlaza.UDProxy
             }
 
             if (Config["TargetIP"] == null)
-                Config["TargetIP"] = Ask<IPAddress>("What is the local IP of your server?", "192.168.0.32") as IPAddress;
+            {
+                IPAddress IPArgv = null;
+                var validIP = (args.Length > 0) ? IPAddress.TryParse(args[0], out IPArgv) : false;
+                if (!validIP) Config["TargetIP"] = Ask<IPAddress>("What is the local IP of your server?", "192.168.0.32") as IPAddress;
+                else Config["TargetIP"] = IPArgv;
+            }
 
             if (Config["TargetPorts"] == null)
-                Config["TargetPorts"] = Ask<List<ushort>>("What are the ports of the regions of your server? (Seperate by comma)", "9000") as List<ushort>;
+            {
+                List<UInt16> portListArgv = null;
+                var validPorts = (args.Length > 1) ? TryParsePorts(args[1], out portListArgv) : false;
+                if (!validPorts) Config["TargetPorts"] = Ask<List<ushort>>("What are the ports of the regions of your server? (Seperate by comma)", "9000") as List<ushort>;
+                else Config["TargetPorts"] = portListArgv;
+            }
+
+            if (Array.IndexOf(args, "--nobatch") == -1)
+            {
+                var createBatch = (bool)Ask<bool>("Would you like to create a batch file to save these settings?", "yes");
+
+                if (createBatch)
+                {
+                    var batchFile = File.CreateText("UDProxy.bat");
+                    batchFile.WriteLine(
+                        System.AppDomain.CurrentDomain.FriendlyName + " "
+                        + Config["TargetIP"].ToString() + " "
+                        + List2CSV<ushort>((List<ushort>)Config["TargetPorts"])
+                        + " --nobatch"
+                    );
+                    batchFile.Flush();
+                    batchFile.Close();
+                }
+            }
 
             //if (Config["ListenIP"] == null)
             //    Config["ListenIP"] = Ask<IPAddress>("What system IP do you want the SOCKS5 server to listen on?", "0.0.0.0") as IPAddress;
@@ -124,6 +158,16 @@ namespace SimPlaza.UDProxy
         public string AnonymousList2String<T>(object list)
         {
             return String.Join(",", ( (List<T>)list ).ToArray());
+        }
+
+        public string List2CSV<T>(List<T> list)
+        {
+            var stringList = new string[list.Count];
+
+            foreach (T item in list)
+                stringList[list.IndexOf(item)] = item.ToString();
+
+            return String.Join(",", stringList);
         }
     }
 }
